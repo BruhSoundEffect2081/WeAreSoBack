@@ -6,6 +6,14 @@ if ESP then
     end
 end
 
+getgenv().ESP = {
+    Enabled = true,
+
+    TextSize = 18, -- default 17
+    
+    Objects = {}
+}
+
 repeat task.wait() until game:IsLoaded()
 
 local Camera = workspace.CurrentCamera
@@ -123,5 +131,9 @@ function ESP:Add(Table)
 
     return Everything
 end
+
+ESP.Updater = RunService.RenderStepped:Connect(function()
+    ESP:Update()
+end)
 
 return ESP
