@@ -48,10 +48,14 @@ function ESP:Clear(object)
             end
         end
     else
-        for DrawName, Drawing  in pairs(ObjectTable.Parts) do
-            Drawing.Drawing:Destroy()
+        if ObjectTable and ObjectTable.Parts then
+            for DrawName, Drawing  in pairs(ObjectTable.Parts) do
+                Drawing.Drawing.Visible = false
+                Drawing.Drawing.Transparency = 1
+                Drawing.Drawing:Destroy()
+            end
+            ObjectTable = nil
         end
-        ObjectTable = nil
     end
 end
 
@@ -71,10 +75,12 @@ function ESP:Update()
                         end
                     end
 
-                    if self.Enabled and Continue then
-                        local Info = DrawTable.Information
-                        local Drawing = DrawTable.Drawing
+                    if not Continue then break end
+                        
+                    local Info = DrawTable.Information
+                    local Drawing = DrawTable.Drawing
 
+                    if self.Enabled then
                         if Info.Type == "Text" then
                             local WorldOffset = PartTable.WorldOffset or Vector3.new(0,0,0)
                             local Point = WTVP(PartTable.Part, WorldOffset)
@@ -89,6 +95,7 @@ function ESP:Update()
                             end
                         end
                     else
+                        Drawing.Visible = false
                         break
                     end
 
@@ -104,13 +111,14 @@ function ESP:Update()
 end
 
 function ESP:Add(Table)
-    if self.Objects[Table.Part] then 
-        ESP:Clear(self.Objects[Table.Part])
+    local ObjectTable = self.Objects[Table.Part]
+    if ObjectTable then
+        self:Clear(Table.Part)
     end
 
     local Everything = {
         Part = Table.Part,
-        Enabled = Table.Enabled,
+        Enabled = Table.Enabled or true,
         Offset = Table.Offset or Vector2.new(0,0,0),
         WorldOffset = Table.WorldOffset or Vector3.new(0,0,0),
 
@@ -132,7 +140,7 @@ function ESP:Add(Table)
                 Size = self.TextSize,
                 Center = true,
                 Outline = TypeTable.Outline or true,
-                Visible = Table.Enabled,
+                Visible = Table.Enabled or true,
                 Color = TypeTable.Color,
                 Position = Vector2.new(Pos.X, Pos.Y)
             })
@@ -146,5 +154,3 @@ end
 ESP.Updater = RunService.RenderStepped:Connect(function()
     ESP:Update()
 end)
-
-return ESP
