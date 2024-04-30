@@ -38,6 +38,7 @@ local function WTVP(Part, WorldOffset)
 end
 
 function ESP:Clear(object)
+    local ObjectTable = self.Objects[object]
     if not object then
         for Part, PartTable in pairs(self.Objects) do
             for DrawName, DrawTable  in pairs(PartTable.Parts) do
@@ -47,47 +48,57 @@ function ESP:Clear(object)
             end
         end
     else
-        for DrawName, DrawTable  in pairs(object.Parts) do
-            local Drawing = DrawTable.Drawing
-            Drawing:Remove()
+        for DrawName, Drawing  in pairs(ObjectTable.Parts) do
+            Drawing.Drawing:Destroy()
         end
+        ObjectTable = nil
     end
 end
 
 function ESP:Update()
     for Part, PartTable in pairs(self.Objects) do
-        for DrawName, DrawTable  in pairs(PartTable.Parts) do
-            local Continue = false
+        task.spawn(function()
+            local Worked, Error = pcall(function()
+                for DrawName, DrawTable  in pairs(PartTable.Parts) do
+                    local Continue = false
 
-            if Part and PartTable and DrawName and DrawTable and PartTable.Part and PartTable.Part.Parent then
-                Continue = true
-            else
-                Continue = false
-                if self.Objects[PartTable.Part] then 
-                    ESP:Clear(self.Objects[PartTable.Part])
-                end
-            end
-
-            if self.Enabled and Continue then
-                local Info = DrawTable.Information
-                local Drawing = DrawTable.Drawing
-
-                if Info.Type == "Text" then
-                    local WorldOffset = PartTable.WorldOffset or Vector3.new(0,0,0)
-                    local Point = WTVP(PartTable.Part, WorldOffset)
-                    local Pos = Point[1]
-                    if Point[2] then
-                        local AddedOffset =  Info.Offset or Vector2.new(0,0,0)
-                        Drawing.Text = Info.Text or "retard, put in a Name"
-                        Drawing.Visible = PartTable.Enabled or false
-                        Drawing.Position = Vector2.new(Pos.X, Pos.Y) + AddedOffset
+                    if Part and PartTable and DrawName and DrawTable and PartTable.Part and PartTable.Part.Parent then
+                        Continue = true
                     else
-                        Drawing.Visible = false
+                        Continue = false
+                        if self.Objects[Part] ~= nil then 
+                            ESP:Clear(Part)
+                        end
                     end
-                end
-            end
 
-        end
+                    if self.Enabled and Continue then
+                        local Info = DrawTable.Information
+                        local Drawing = DrawTable.Drawing
+
+                        if Info.Type == "Text" then
+                            local WorldOffset = PartTable.WorldOffset or Vector3.new(0,0,0)
+                            local Point = WTVP(PartTable.Part, WorldOffset)
+                            local Pos = Point[1]
+                            if Point[2] then
+                                local AddedOffset =  Info.Offset or Vector2.new(0,0,0)
+                                Drawing.Text = Info.Text or "retard, put in a Name"
+                                Drawing.Visible = PartTable.Enabled or false
+                                Drawing.Position = Vector2.new(Pos.X, Pos.Y) + AddedOffset
+                            else
+                                Drawing.Visible = false
+                            end
+                        end
+                    else
+                        break
+                    end
+
+                end
+            end)
+
+            if not Worked then
+                --print(Error)
+            end
+        end)
     end
     return
 end
